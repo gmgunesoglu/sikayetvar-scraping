@@ -74,6 +74,7 @@ for brand in brand_names:
     last_page = soup.find("ul", class_="pagination-list").find_all("a", class_="page")[-1].text.strip()
     last_page_number = int(last_page)
     print(f"there are {last_page_number} pages about {brand}")
+    print()
 
     
     total_complaints = 0
@@ -119,6 +120,10 @@ for brand in brand_names:
         print(f"COMPLAINER: {complainer}")
 
         complaint = Complaint(title, description, date, view_count, complainer)
+
+        
+
+
         complaint_list.append(complaint)
 
  
