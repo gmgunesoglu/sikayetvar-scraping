@@ -12,6 +12,7 @@ from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
 from complaint import Complaint
+from reply import Reply
 
 # user agent... 
 headers = {
@@ -47,7 +48,6 @@ def is_good_response(resp):
             and content_type is not None 
             and content_type.find('html') > -1)
 
-
 def log_error(e):
     """
     It is always a good idea to log errors. 
@@ -56,16 +56,33 @@ def log_error(e):
     """
     print(e)
     
+
+
+
 BASE_URL = "http://www.sikayetvar.com"
 brand_names = ["vena","w-collection","qnet-promosyon"] #The brand names are to be filled in
 
 complaint_list = []
+
 # complaint = Complaint("title", "description", "date", "view_count", "complainer")
 # print(complaint.title)
-# complaint.set_answer("date", "message", "score", "replier")
-# print(complaint.answer.message)
+# answer = Reply("date", "message", "score", "replier")
+# complaint.set_reply(answer)
+# print(complaint.reply.message)
 
+def get_brands():
+    brand_list = []
+    raw_htlm = simple_get("https://www.sikayetvar.com/tum-markalar")
+    soup = BeautifulSoup(raw_htlm, 'html.parser')
+    last_page = soup.find("ul", class_="pagination ga-v ga-c").find_all("a")[-2].text
+    print(last_page)
+    # last_page_number = int(last_page)
+    # print(f"there are {last_page_number} pages about {brand}")
+    # print()
 
+get_brands()
+
+brand_names = []  #bi dursun sonra silersin
 for brand in brand_names:
     BRAND_URL = BASE_URL + "/" + brand
     raw_html = simple_get(BRAND_URL)
@@ -93,8 +110,6 @@ for brand in brand_names:
             item_pages.append(complaint["href"])
 
     print(f"found {total_complaints} complaints about {brand}")
-
-
     
     complaint_number = 0
     for page in item_pages:
@@ -120,10 +135,6 @@ for brand in brand_names:
         print(f"COMPLAINER: {complainer}")
 
         complaint = Complaint(title, description, date, view_count, complainer)
-
-        
-
-
         complaint_list.append(complaint)
 
  

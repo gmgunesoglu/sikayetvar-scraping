@@ -1,11 +1,7 @@
+from reply import Reply
+
 class Complaint:
-    class Answer:
-        def __init__(self, date: str, message: str, score: str, replier: str):
-            self.date = date
-            self.message = message
-            self.score = score
-            self.replier = replier
-    
+    reply: Reply
 
     def __init__(self, title: str, description: str, date: str, view_count: str, complainer: str):
         self.title = title
@@ -13,7 +9,10 @@ class Complaint:
         self.date = date
         self.view_count = view_count
         self.complainer = complainer
-        self.answer = None
+        self.reply = None
         
-    def set_answer(self, date: str, message: str, score: str, replier: str):
-        self.answer = Complaint.Answer(date, message, score, replier)
+    def set_reply(self, date: str, message: str, score: str, replier: str):
+        self.reply = Reply(date, message, score, replier)
+
+    def set_reply(self, reply: Reply):
+        self.reply = reply
