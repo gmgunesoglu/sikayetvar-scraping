@@ -8,11 +8,14 @@ Created on Fri Jul 13 12:01:30 2018
 import csv
 import requests
 import time
+import re
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
 from complaint import Complaint
 from reply import Reply
+from complained_item import ComplainedItem
+from brand import Brand
 
 # user agent... 
 headers = {
@@ -56,53 +59,86 @@ def log_error(e):
     """
     print(e)
     
+
 # tüm markaların linklerini getirsin    
-def get_brands_href():
+def get_initial_complained_items():
     url = "https://www.sikayetvar.com/tum-markalar"
     raw_htlm = simple_get(url)
     soup = BeautifulSoup(raw_htlm, 'html.parser')
     last_page = soup.find("ul", class_="pagination ga-v ga-c").find_all("a")[-2].text
     last_page_number = int(last_page)
-    brands_href_list = []
-    for i in range(1, 3+1):
+    brand_list = []
+    for i in range(1, 2):
         url_with_pagination = url + "?page=" + str(i)
         raw_html = simple_get(url_with_pagination)
         soup = BeautifulSoup(raw_html, 'html.parser')
-        complaints = soup.find_all("div", attrs={"class":"card-brand"})
+        complaints = soup.find_all("div", attrs={"class":"brand-rate"})
         for complaint in complaints:
-            brands_href = complaint.find("a", attrs={"class": "brand-logo"})["href"]
-            brands_href_list.append(brands_href)
-    return brands_href_list
+            brand_name = complaint.find("span", class_="brand-name").text
+            brand_link = complaint.find("a")["href"]
+            rating = complaint.find("div", class_="rate-num").text.split()[0]
+            rating_count = complaint.find("span", class_="without-brackets").text
+            rating_count = rating_count.split(" ",1)[0]
+            rating_count = rating_count.replace(".","")
+            complained_item = ComplainedItem(brand_link, brand_name, int(rating), int(rating_count), None, brand_link)
+            brand_list.append(complained_item)  
+    return brand_list
 
+def get_brands(initial_complained_items = []):
+    base_url = "https://www.sikayetvar.com"
+    brand_list = []
+    for complained_item in initial_complained_items:
+        report_url = base_url + complained_item.href + complained_item.href + "-marka-karnesi"
+        raw_html = simple_get(report_url)
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        brand_report = soup.find_all("div", attrs={"class":"data-count"})
+        complaint_count = brand_report[1].find("p").get_text().strip().replace(".","")
+        reply_count = 0
+        reply_sec = 0
+        reply_text = brand_report[0].find("p").get_text().strip()
+        if reply_text != "-":
+            reply_count = int(reply_text.replace(".",""))
+        reply_time_text = brand_report[3].find("p").get_text()
+        if reply_time_text != "-":
+            match = re.match(r'(?:(\d+)\s*sa)?\s*(?:(\d+)\s*dk)?\s*(?:(\d+)\s*sn)?', reply_time_text)
+            hours = int(match.group(1) or 0)
+            minutes = int(match.group(2) or 0)
+            seconds = int(match.group(3) or 0)
+            reply_sec = hours*3600 + minutes*60 + seconds
+        brand = Brand(complained_item.href, complained_item.name, reply_count, complaint_count, reply_sec, complained_item.rating_count, complained_item.rating)
+        brand_list.append(brand)
+    return brand_list
 
-# tüm markaların karnelerine gitsin
-# markalar veri tabanına kayededilsin
-def scrape_brands(brands_href_list = [], base_url = "http://www.sikayetvar.com"):
-    for brands_href in brands_href_list:
-        brand_report_link = base_url + brands_href + brands_href + "-marka-karnesi"
-        print(brand_report_link)
+# şikayet edilen nesne için alt/üst sınıf bilgilerini girer ve kaydeder
+# tek sorumluluk prensibineuymuyor ama işlemleri hızlandıracak
+def expend_and_save_complained_item(complained_items=[]):
+    complained_item: ComplainedItem
+    for complained_item in complained_items:
+        url = "https://www.sikayetvar.com" + complained_item.href
+        raw_html = simple_get(url)
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        complaint_div = soup.find("div", attrs={"class":"brand-detail-grid__main"})
+        print("----" + complained_item.href + "----")
+        if complaint_div.section is not None:
+            print(complaint_div.section)
 
 
 
 BASE_URL = "http://www.sikayetvar.com"
-brand_names = ["vena","w-collection","qnet-promosyon"] #The brand names are to be filled in
+initial_complained_items = get_initial_complained_items()
+# brands = get_brands(initial_complained_items)
+# brand: Brand
+# for brand in brands:
+#     print(f"href: {brand.href}\nname: {brand.name}\nreplied complaint: {brand.replied_complaint}\ntotal complaint: {brand.total_complaint}\naverage reply sec: {brand.average_reply_sec}\nrating count: {brand.rating_count}\nrating: {brand.rating}")
+# print(f"total brand count: {len(brands)}")
+expend_and_save_complained_item(initial_complained_items)
 
-complaint_list = []
-
-# complaint = Complaint("title", "description", "date", "view_count", "complainer")
-# print(complaint.title)
-# answer = Reply("date", "message", "score", "replier")
-# complaint.set_reply(answer)
-# print(complaint.reply.message)
-
-
-brands_href_list = get_brands_href()
-print(f"Found {len(brands_href_list)} brands.")
-scrape_brands(brands_href_list, BASE_URL)
+# print(f"Found {len(brands_href_list)} brands.")
+# scrape_brands(brands_href_list, BASE_URL)
 # for brand_href in brands_href_list:
 #     print(brand_href)
 
-brand_names = []  #bi dursun sonra silersin
+brand_names = []  #bi dursun sonra silersin şimdi aşağısı çalışmasın
 for brand in brand_names:
     BRAND_URL = BASE_URL + "/" + brand
     raw_html = simple_get(BRAND_URL)
