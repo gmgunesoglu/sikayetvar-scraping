@@ -1,6 +1,11 @@
+from datetime import datetime
+
 class Reply:
-    def __init__(self, date: str, message: str, score: str, replier: str):
-        self.date = date
+    id: int
+
+    def __init__(self, href: str, message: str, date: datetime, is_from_brand: bool):
+        self.id = None
+        self.href = href
         self.message = message
-        self.score = score
-        self.replier = replier
+        self.date = date
+        self.is_from_brand = is_from_brand

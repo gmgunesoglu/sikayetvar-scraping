@@ -6,4 +6,4 @@ class ComplainedItem:
         self.rating_count = rating_count
         self.upper_item = upper_item
         self.brand = brand
-        self.is_leaf = False
+        self.is_leaf = True
