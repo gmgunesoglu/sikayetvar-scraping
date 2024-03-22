@@ -1,28 +1,24 @@
-import re
+from complained_item import ComplainedItem
 
-# Verilen string
-texts = [
-    "7 sa 6 dk 21 sn",
-    "6 dk 21 sn",
-    "7 sa 6 dk",
-    "7 sa 21 sn"
-]
+def get_next_generation(item_list = []):
+    next_items = []
+    item: ComplainedItem
+    for item in item_list:
+        new_item = ComplainedItem(item.href + "/child", item.name + " child", item.rating, item.rating_count, item.href, item.brand)
+        new_item.is_leaf = True
+        next_items.append(new_item)
+        item.brand = item.name
+    return next_items
 
-# Regex deseni
-pattern = r'(?:(\d+)\s*sa)?\s*(?:(\d+)\s*dk)?\s*(?:(\d+)\s*sn)?'
+def print_item(item: ComplainedItem):
+    print(f"href: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item: {item.upper_item}\nbrand: {item.brand}\nis leafe: {item.is_leaf}\n")
 
-for text in texts:
-    # Eşleşmeyi bulma
-    match = re.match(pattern, text)
 
-    if match:
-        hours = int(match.group(1) or 0)
-        minutes = int(match.group(2) or 0)
-        seconds = int(match.group(3) or 0)
-        
-        print("Saat:", hours)
-        print("Dakika:", minutes)
-        print("Saniye:", seconds)
-        print("---")
-    else:
-        print("Eşleşme bulunamadı.")
+item = ComplainedItem("/tes","test",5,222,None,"/test")
+
+item_list = []
+item_list.append(item)
+print_item(item_list[0])
+next_item_list = get_next_generation(item_list)
+print_item(item_list[0])
+print_item(next_item_list[0])

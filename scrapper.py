@@ -119,8 +119,11 @@ def expend_and_save_complained_item(complained_items=[]):
         soup = BeautifulSoup(raw_html, 'html.parser')
         complaint_div = soup.find("div", attrs={"class":"brand-detail-grid__main"})
         print("----" + complained_item.href + "----")
-        if complaint_div.section is not None:
-            print(complaint_div.section)
+        if complaint_div.find("section", recursive=False):
+            print("var...")
+        else: 
+            print()
+
 
 
 
@@ -191,7 +194,7 @@ for brand in brand_names:
         print(f"COMPLAINER: {complainer}")
 
         complaint = Complaint(title, description, date, view_count, complainer)
-        complaint_list.append(complaint)
+        # complaint_list.append(complaint)
 
  
     
