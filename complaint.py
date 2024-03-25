@@ -5,7 +5,7 @@ class Complaint:
     reply: Reply
     rating: int
 
-    def __init__(self, href: str, complained_item: str, title: str, date: datetime, view_count: int, like_count: int, complain_owner: str):
+    def __init__(self, href: str, complained_item: str, title: str, date: datetime, view_count: int, like_count: int, complain_owner: str, rating: int, solved: bool):
         self.href = href
         self.complained_item = complained_item
         self.title = title
@@ -13,8 +13,8 @@ class Complaint:
         self.view_count = view_count
         self.like_count = like_count
         self.complain_owner = complain_owner
-        self.rating = None
-        self.sovled = False
+        self.rating = rating
+        self.sovled = solved
         self.commits = []
         self.replies = []
 
