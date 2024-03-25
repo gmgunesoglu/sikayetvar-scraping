@@ -5,6 +5,7 @@ Created on Fri Jul 13 12:01:30 2018
 @author: Mehmet Sonmez
 """
 
+import locale
 import csv
 import requests
 import time
@@ -27,6 +28,8 @@ HEADERS = {
 }
 
 BASE_URL = "http://www.sikayetvar.com"
+
+NO_DESCRIPTION_COMPLAINTS = []
 
 
 # FUNCTIONS
@@ -94,7 +97,7 @@ def get_initial_complained_items():
 def get_brands(initial_complained_items = []):
     base_url = "https://www.sikayetvar.com"
     brand_list = []
-    for complained_item in initial_complained_commit_owneritems:
+    for complained_item in initial_complained_items:
         report_url = base_url + complained_item.href + complained_item.href + "-marka-karnesi"
         raw_html = simple_get(report_url)
         soup = BeautifulSoup(raw_html, 'html.parser')
@@ -127,7 +130,7 @@ def print_complained_items(complained_items=[]):
 def print_complaints(complaints=[]):
     complaint: Complaint
     for complaint in complaints:
-        print(f"href: {complaint.href}\ncomplained item: {complaint.complained_item}\ntitle: {complaint.title}\ndate: {complaint.date}\nview count: {complaint.view_count}\ncomplain owner: {complaint.complain_owner}\nrating: {complaint.rating}\nsolved: {complaint.sovled}" )
+        print(f"href: {complaint.href}\ncomplained item: {complaint.complained_item}\ntitle: {complaint.title}\ndate: {complaint.date}\nview count: {complaint.view_count}\ncomplain owner: {complaint.complain_owner}\nrating: {complaint.rating}\nsolved: {complaint.sovled}\n")
 
 def scrape_complained_items(complained_items=[]):
     next_generation_compained_items = []
@@ -201,10 +204,13 @@ def scrape_complaints(complained_items=[]):
             url_with_pagination = url + "?page=" + str(i)
             raw_html = simple_get(url_with_pagination)
             soup = BeautifulSoup(raw_html, 'html.parser')
-            complaints = soup.find_all("a", attrs={"class":"complaint-layer"})
+            main_content = soup.find("main", attrs={"class":"content"})
+            complaints = main_content.find_all("a", attrs={"class":"complaint-layer"})
             total_complaints += len(complaints)
             for complaint in complaints:
                 complaint_pages.append(complaint["href"])
+                print(complaint["href"]) #@ sonra sil
+
    
         print(f"found {total_complaints} complaints about {complained_item.brand}")
         
@@ -216,9 +222,15 @@ def scrape_complaints(complained_items=[]):
             raw_html = simple_get(complaint_url)
             soup = BeautifulSoup(raw_html, 'html.parser') 
         
-            title = soup.find("h1",{"class":"complaint-detail-title"}).text.strip('\n')
+            # title = soup.find("h1",{"class":"complaint-detail-title"}).text.strip()
+            title = soup.find("title").text.strip()
             print(f"TITLE: {title}")
-            description = soup.find("div", {"class":"complaint-detail-description"}).text.strip('\n')
+            description = soup.find("div", {"class":"complaint-detail-description"})
+            if description is None:
+                description = "No description for: " + complaint_url
+                NO_DESCRIPTION_COMPLAINTS.append(description)
+            else:
+                description = description.text.strip('\n')
             print(f"DESCRIPTION: {description}")
             date_str = soup.find("div", {"class": "js-tooltip time"})["title"].strip()
             print(f"DATE: {date_str}")
@@ -235,40 +247,46 @@ def scrape_complaints(complained_items=[]):
             like_count = 0
             complaint = Complaint(complaint_page, complained_item.href, title, date, view_count, like_count, complain_owner)
             complaints.append(complaint)
-    return complaint
+    return complaints
 
 
 # MAIN PROCESS
+
+locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
 
 # gets topl lvl complained items and they are also brand
 initial_complained_items = get_initial_complained_items()
 
 # creates brand list with complained items, dont send lower levels complained item lists as parameter!
-# brands = get_brands(initial_complained_items)
-# brand: Brand
-# for brand in brands:
-#     print(f"href: {brand.href}\nname: {brand.name}\nreplied complaint: {brand.replied_complaint}\ntotal complaint: {brand.total_complaint}\naverage reply sec: {brand.average_reply_sec}\nrating count: {brand.rating_count}\nrating: {brand.rating}")
-# print(f"total brand count: {len(brands)}")
+brands = get_brands(initial_complained_items)
+brand: Brand
+for brand in brands:
+    print(f"href: {brand.href}\nname: {brand.name}\nreplied complaint: {brand.replied_complaint}\ntotal complaint: {brand.total_complaint}\naverage reply sec: {brand.average_reply_sec}\nrating count: {brand.rating_count}\nrating: {brand.rating}")
+print(f"total brand count: {len(brands)}")
 
 # Hem parametre olarak gönderilen listedeki şikayet edilen nesnede eksik olan alanları doldurur ()
 # tek sorumluluk prensibine uymuyor ama işlemleri hızlandıracak
 
 print("--- first gereration after scrape ---")
 father_items = initial_complained_items
-complaints = scrape_complaints(father_items)
-print_complaints(complaints)
+# father_items = []
+# father_items.append(ComplainedItem("/turkcell", "Turkcell", 29, 10095, None, "/turkcell"))
 
-# while True: 
-#     child_items = scrape_complained_items(father_items)
-#     print("--- items ---")
-#     print_complained_items(father_items)
-#     if len(child_items) == 0:
-#         break
-#     father_items = child_items
+while True: 
+    child_items = scrape_complained_items(father_items)
+    print("--- items ---")
+    print_complained_items(father_items)
+    if len(child_items) == 0:
+        break
+    father_items = child_items
+
+complaints = scrape_complaints(father_items)
+print("\n--- COMPLAINTS ---\n")
+print_complaints(complaints)
 
 # bu noktada 1. aşama bitiyor (veri tabanı kayıtları yapılmalı)
 # en alt seviyedeki(is_leaf = True) complained_item listesini bir sql sorgusu ile oluşturup
 # fonksiyona parametre olarak gönder, o da tüm şikayetleri işleyip kayıt etsin (2. aşama)
 
-scrape_complaints(father_items)
+# scrape_complaints(father_items)
  

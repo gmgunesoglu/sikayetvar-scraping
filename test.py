@@ -26,8 +26,30 @@
 import locale
 from datetime import datetime
 
+def string_to_date(date_string):
+    # Şuanki yıl bilgisini alın    
+    try:
+        if len(date_string.split()) == 2:
+            date = datetime.strptime(date_string, "%B %d %H:%M").date()
+        elif len(date_string.split()) == 3:
+            date_string = f"{datetime.now().year} {date_string}"
+            date = datetime.strptime(date_string, "%Y %d %B %H:%M").date()
+        elif len(date_string.split()) == 4:
+            date = datetime.strptime(date_string, "%d %B %Y %H:%M").date()
+        else:
+            print("[-] Date string has much parameters!")
+        return date
+    except ValueError:
+        print("[-] Unexpected date format!")
+        print(f"({date_string})")
+        print(len(date_string.split()))
+        return None
+
 # Türkçe ay isimlerini tanımla
 locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
+
+
+
 
 # Verilen string
 string_tarih = "22 Mart 13:24"
