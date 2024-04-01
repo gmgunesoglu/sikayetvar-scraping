@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -14,6 +15,8 @@ class Brand(Base):
     average_reply_sec = Column(Integer, nullable=False)
     rating_count = Column(Integer, nullable=False)
     rating = Column(Integer, nullable=False)
+
+    complained_items = relationship("ComplainedItem", back_populates="brand")
 
     def __init__(self, href: str, name: str, replied_complaint: int, total_complaint: int, average_reply_sec: int, rating_count: int, rating: int):
         self.href = href

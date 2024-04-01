@@ -16,7 +16,7 @@ class Complaint(Base):
     view_count = Column(Integer, nullable=False)
     like_count = Column(Integer, nullable=False)   
     member_id = Column(Integer, ForeignKey('member.id'), nullable=False)   
-    rating = Column(Integer, nullable=False)
+    rating = Column(Integer, nullable=True)
     solved = Column(Boolean, nullable=False)
 
     def __init__(self, href: str, complained_item_id: int, title: str, date: datetime, view_count: int, like_count: int, member_id: int, rating: int, solved: bool):

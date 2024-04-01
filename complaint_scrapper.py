@@ -18,6 +18,7 @@ from reply import Reply
 from complained_item import ComplainedItem
 from brand import Brand
 from commit import Commit
+from dao import MemberDao, ReplyDao, ComplaintDao, ComplainedItemDao, BrandDao
 
 # GLOBAL VERIABLES
 
@@ -86,11 +87,11 @@ def get_initial_complained_items():
             rating_count = complaint.find("span", class_="without-brackets").text
             rating_count = rating_count.split(" ",1)[0]
             rating_count = rating_count.replace(".","")
-            complained_item = ComplainedItem(brand_link, brand_name, int(rating), int(rating_count), None, brand_link)
+            complained_item = ComplainedItem(brand_link, brand_name, int(rating), int(rating_count), None, None)
             brand_list.append(complained_item)  
     return brand_list
 
-def get_brands(initial_complained_items = []):
+def scrape_brands(initial_complained_items = []):
     base_url = "https://www.sikayetvar.com"
     brand_list = []
     for complained_item in initial_complained_items:
@@ -112,16 +113,22 @@ def get_brands(initial_complained_items = []):
             seconds = int(match.group(3) or 0)
             reply_sec = hours*3600 + minutes*60 + seconds
         brand = Brand(complained_item.href, complained_item.name, reply_count, complaint_count, reply_sec, complained_item.rating_count, complained_item.rating)
+        brand = BrandDao.add_or_update(brand)
         brand_list.append(brand)
     return brand_list
 
+def print_brands(brands=[]):
+    brand: Brand
+    for brand in brands:
+        print(f"href: {brand.href}\nname: {brand.name}\nrepiled complaint: {brand.replied_complaint}\ntotal complaint: {brand.total_complaint}\naverage reply sec: {brand.average_reply_sec}\nrating: {brand.rating}\nrating count: {brand.rating_count}\n")
+
 def print_complained_item(item: ComplainedItem):
-    print(f"href: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item: {item.upper_item}\nbrand: {item.brand}\nis leafe: {item.is_leaf}\n")
+    print(f"id: {item.id}\nhref: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item id: {item.upper_item_id}\nbrand id: {item.brand_id}\nis leafe: {item.is_leaf}\n")
 
 def print_complained_items(complained_items=[]):
     item: ComplainedItem
     for item in complained_items:
-        print(f"href: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item: {item.upper_item}\nbrand: {item.brand}\nis leafe: {item.is_leaf}\n")
+        print(f"id: {item.id}\nhref: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item id: {item.upper_item_id}\nbrand id: {item.brand_id}\nis leafe: {item.is_leaf}\n")
 
 def print_complaints(complaints=[]):
     complaint: Complaint
@@ -147,6 +154,8 @@ def scrape_complained_items(complained_items=[]):
             if swiper_wrapper_div:
                 # cocukları var
                 complained_item.is_leaf = False
+                print_complained_item(complained_item) # @+ sonra sil
+                complained_item = ComplainedItemDao.add_or_update(complained_item)
                 links = swiper_wrapper_div.find_all("a", recursive=False)
                 for link in links:
                     url = BASE_URL + (link["href"])
@@ -163,9 +172,13 @@ def scrape_complained_items(complained_items=[]):
                         rating_count_str = ratings_div.find("span",class_="without-brackets").text.strip()
                         rating_count_str = rating_count_str.replace(".", "")
                         rating_count_str = rating_count_str.split()[0]
-                        rating_count = int(rating_count_str)
-                    next_item = ComplainedItem(link["href"], name, rating, rating_count, complained_item.href, complained_item.brand)
+                        rating_count = int(rating_count_str)            
+                    next_item = ComplainedItem(link["href"], name, rating, rating_count, complained_item.id, complained_item.brand_id)
                     next_generation_compained_items.append(next_item)
+            else:
+                ComplainedItemDao.add_or_update(complained_item)
+        else:
+            ComplainedItemDao.add_or_update(complained_item)
     return next_generation_compained_items
 
 def string_to_date(date_string):
@@ -321,18 +334,18 @@ def scrape_complaints(complained_items=[]):
 
 # MAIN PROCESS
 
-# string i date e çevirmek için
+# required for convert string to datetime
 locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
 
-# gets topl lvl complained items and they are also brand
-initial_complained_items = get_initial_complained_items()
+# gets top lvl complained items and they are also brand
+initial_complained_items = get_initial_complained_items()    
 
 # creates brand list with complained items, send top level complained item lists as parameter!
-brands = get_brands(initial_complained_items)
-brand: Brand
-for brand in brands:
-    print(f"href: {brand.href}\nname: {brand.name}\nreplied complaint: {brand.replied_complaint}\ntotal complaint: {brand.total_complaint}\naverage reply sec: {brand.average_reply_sec}\nrating count: {brand.rating_count}\nrating: {brand.rating}")
-print(f"total brand count: {len(brands)}")
+brands = scrape_brands(initial_complained_items)
+
+for item in initial_complained_items:
+    item.brand_id = BrandDao.get_by_href(item.href).id
+    item.upper_item_id = None
 
 # Hem parametre olarak gönderilen listedeki şikayet edilen nesnede eksik olan alanları doldurur ()
 # tek sorumluluk prensibine uymuyor ama işlemleri hızlandıracak

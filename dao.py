@@ -75,6 +75,13 @@ class BrandDao:
     def delete_by_href(href: str):
         brand = BrandDao.get_by_href(href)
         return BrandDao.__delete(brand)
+    
+    @staticmethod
+    def add_or_update(brand: Brand):
+        old_brand = BrandDao.get_by_href(brand.href)
+        if old_brand:
+            return BrandDao.__update(old_brand, brand)
+        return BrandDao.add(brand)
 
 class ComplainedItemDao:
 
@@ -143,6 +150,13 @@ class ComplainedItemDao:
     def delete_by_href(href: str):
         complained_item = ComplainedItemDao.get_by_href(href)
         return ComplainedItemDao.__delete(complained_item)
+    
+    @staticmethod
+    def add_or_update(complained_item: ComplainedItem):
+        old_complained_item = ComplainedItemDao.get_by_href(complained_item.href)
+        if old_complained_item:
+            return ComplainedItemDao.__update(old_complained_item, complained_item)
+        return ComplainedItemDao.add(complained_item)
 
 class ComplaintDao:
 
@@ -341,13 +355,13 @@ class MemberDao:
         return MemberDao.__delete(member)
     
 
-# # Veritabanı bağlantısını oluştur
-# engine = create_engine('postgresql://postgres:postgres@localhost:5432/sikayetvar')
-# Session = sessionmaker(bind=engine)
-# session = Session()
+# Veritabanı bağlantısını oluştur
+engine = create_engine('postgresql://postgres:postgres@localhost:5432/sikayetvar')
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
-# # brand = Brand("/turkcell", "Turkcell", 5000, 5200, 300, 600, 60)
-# # brand = BrandDao.add(brand)
+# brand = Brand("/turkcell", "Turkcell", 5000, 5200, 300, 600, 60)
+# brand = BrandDao.add(brand)
 # brand = BrandDao.get_by_href("/migros")
 # print(brand.id)
