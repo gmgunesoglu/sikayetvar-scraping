@@ -1,10 +1,23 @@
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 from reply import Reply
 
-class Complaint:
-    id: int
-    reply: Reply
-    rating: int
+Base = declarative_base()
+
+class Complaint(Base):
+    __tablename__ = 'complaint'
+
+    id = Column(Integer, primary_key=True)
+    href = Column(String(255), nullable=False, unique=True)
+    complained_item_id = Column(Integer, ForeignKey('complained_item.id'), nullable=False)
+    title = Column(String(255), nullable=False)
+    date = Column(DateTime, nullable=False)
+    view_count = Column(Integer, nullable=False)
+    like_count = Column(Integer, nullable=False)   
+    member_id = Column(Integer, ForeignKey('member.id'), nullable=False)   
+    rating = Column(Integer, nullable=False)
+    solved = Column(Boolean, nullable=False)
 
     def __init__(self, href: str, complained_item_id: int, title: str, date: datetime, view_count: int, like_count: int, member_id: int, rating: int, solved: bool):
         self.href = href
@@ -16,12 +29,3 @@ class Complaint:
         self.member_id = member_id
         self.rating = rating
         self.sovled = solved
-        self.commits = []
-        self.replies = []
-
-        
-    def set_reply(self, date: str, message: str, score: str, replier: str):
-        self.reply = Reply(date, message, score, replier)
-
-    def set_reply(self, reply: Reply):
-        self.reply = reply

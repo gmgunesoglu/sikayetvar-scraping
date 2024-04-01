@@ -297,9 +297,6 @@ from sqlalchemy.orm import sessionmaker
 from brand import Brand
 
 def create_brand(href, name, replied_complaint, total_complaint, average_reply_sec, rating_count, rating):
-    """
-    Yeni bir marka oluşturur ve veritabanına ekler.
-    """
     new_brand = Brand(href=href, name=name, replied_complaint=replied_complaint, total_complaint=total_complaint,
                       average_reply_sec=average_reply_sec, rating_count=rating_count, rating=rating)
     session.add(new_brand)

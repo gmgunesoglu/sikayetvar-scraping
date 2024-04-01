@@ -7,7 +7,7 @@ class Brand(Base):
     __tablename__ = 'brand'
 
     id = Column(Integer, primary_key=True)
-    href = Column(String(255), nullable=False)
+    href = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     replied_complaint = Column(Integer, nullable=False)
     total_complaint = Column(Integer, nullable=False)
