@@ -1,20 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 13 12:01:30 2018
-
-@author: Mehmet Sonmez
-"""
-
-import locale
 import requests
 import time
 import re
-from datetime import datetime, timedelta
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
-from entity import Brand, ComplainedItem, Reply, ErrorLog
-from dao import ComplainedItemDao, BrandDao, ErrorLogDao
+from entity import Brand, ComplainedItem
+from dao import ComplainedItemDao, BrandDao, save_error
 
 # GLOBAL VERIABLES
 
@@ -28,11 +19,6 @@ BASE_URL = "http://www.sikayetvar.com"
 # FUNCTIONS
 
 def simple_get(url):
-    """
-    Attempts to get the content at `url` by making an HTTP GET request.
-    If the content-type of response is some kind of HTML/XML, return the
-    text content, otherwise return None.
-    """
     time.sleep(1)
     print(f"GET: {url}")
     try:
@@ -42,27 +28,16 @@ def simple_get(url):
             else:
                 print(f"None url: {url}")
                 return None
-
     except RequestException as e:
-        log_error('Error during requests to {0} : {1}'.format(url, str(e)))
+        err = RuntimeError('Error during requests to {0} : {1}'.format(url, str(e)))
+        save_error(err)
         return None
 
 def is_good_response(resp):
-    """
-    Returns True if the response seems to be HTML, False otherwise.
-    """
     content_type = resp.headers['Content-Type'].lower()
     return (resp.status_code == 200 
             and content_type is not None 
             and content_type.find('html') > -1)
-
-def log_error(e):
-    """
-    It is always a good idea to log errors. 
-    This function just prints them, but you can
-    make it do anything.
-    """
-    print(e)
     
 def get_initial_complained_items():
     url = "https://www.sikayetvar.com/tum-markalar"
@@ -126,16 +101,6 @@ def print_complained_items(complained_items=[]):
     for item in complained_items:
         print(f"id: {item.id}\nhref: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item id: {item.upper_item_id}\nbrand id: {item.brand_id}\nis leafe: {item.is_leaf}\n")
 
-def print_complaints(complaints=[]):
-    complaint: Reply
-    for complaint in complaints:
-        print(f"href: {complaint.href}\ncomplained item: {complaint.complained_item}\ntitle: {complaint.title}\ndate: {complaint.date}\nview count: {complaint.view_count}\ncomplain owner: {complaint.complain_owner}\nrating: {complaint.rating}\nsolved: {complaint.sovled}")
-        print("replies:")
-        reply: Reply
-        for reply in complaint.replies:
-            print(f"href: {reply.href}\nmessage: {reply.message}\ndate: {reply.date}\nis from brand: {reply.is_from_brand}")
-        print()
-
 def scrape_complained_items(complained_items=[]):
     next_generation_compained_items = []
     complained_item: ComplainedItem
@@ -177,63 +142,8 @@ def scrape_complained_items(complained_items=[]):
             ComplainedItemDao.add_or_update(complained_item)
     return next_generation_compained_items
 
-def string_to_date(date_string):
-    # Şuanki yıl bilgisini alın
-    parameters = len(date_string.split())
-    try:
-        if parameters == 2:
-            date = datetime.strptime(date_string, "%B %d %H:%M").date()
-        elif parameters == 3:
-            date_string = f"{datetime.now().year} {date_string}"
-            date = datetime.strptime(date_string, "%Y %d %B %H:%M").date()
-        elif parameters == 4:
-            date = datetime.strptime(date_string, "%d %B %Y %H:%M").date()
-        else:
-            print("[-] Date string has much parameters!")
-        return date
-    except ValueError:
-        print("[-] Unexpected date format!")
-        print(f"({date_string})")
-        print(parameters)
-        print(date_string.split())
-        return None
-
-def convert_to_datetime(time_str):
-    if "saniye" in time_str:
-        seconds = int(time_str.split()[0])
-        return datetime.now() - timedelta(seconds=seconds)
-    
-    elif "dakika" in time_str:
-        minutes = int(time_str.split()[0])
-        return datetime.now() - timedelta(minutes=minutes)
-    
-    elif "saat" in time_str:
-        hours = int(time_str.split()[0])
-        return datetime.now() - timedelta(hours=hours)
-    
-    elif "gün" in time_str:
-        days = int(time_str.split()[0])
-        return datetime.now() - timedelta(days=days)
-    
-    elif "hafta" in time_str:
-        weeks = int(time_str.split()[0])
-        return datetime.now() - timedelta(weeks=weeks)
-    
-    else:
-        try:
-            # Eğer saniye, dakika, saat, gün veya hafta içermiyorsa
-            # ve '%d %B %H:%M' formatına uyuyorsa bu formata göre çevir
-
-            return string_to_date(time_str)
-        except ValueError:
-            print("Geçersiz tarih formatı:", time_str)
-            return None
-
 
 # MAIN PROCESS
-
-# required for convert string to datetime
-locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
 
 # 1- tüm markalara gidip initial_complained_items oluşturuluyor
 initial_complained_items = get_initial_complained_items()    

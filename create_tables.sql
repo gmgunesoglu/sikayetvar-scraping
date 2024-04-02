@@ -59,3 +59,9 @@ CREATE TABLE reply (
     is_from_brand BOOLEAN NOT NULL,
     FOREIGN KEY (complaint_id) REFERENCES complaint(id)
 );
+
+CREATE TABLE error_log (
+    id BIGSERIAL PRIMARY KEY,
+    message VARCHAR(255) NOT NULL,
+    date TIMESTAMP NOT NULL
+);

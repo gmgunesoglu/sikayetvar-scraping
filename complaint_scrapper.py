@@ -1,20 +1,12 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 13 12:01:30 2018
-
-@author: Mehmet Sonmez
-"""
-
 import locale
 import requests
 import time
-import re
 from datetime import datetime, timedelta
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
-from entity import Brand, ComplainedItem, Complaint, Reply, Member, ErrorLog
-from dao import MemberDao, ReplyDao, ComplaintDao, ComplainedItemDao, ErrorLogDao
+from entity import Complaint, Reply, Member
+from dao import MemberDao, ReplyDao, ComplaintDao, ComplainedItemDao, save_error
 
 # GLOBAL VERIABLES
 
@@ -28,11 +20,6 @@ BASE_URL = "http://www.sikayetvar.com"
 # FUNCTIONS
 
 def simple_get(url):
-    """
-    Attempts to get the content at `url` by making an HTTP GET request.
-    If the content-type of response is some kind of HTML/XML, return the
-    text content, otherwise return None.
-    """
     time.sleep(1)
     print(f"GET: {url}")
     try:
@@ -42,41 +29,17 @@ def simple_get(url):
             else:
                 print(f"None url: {url}")
                 return None
-
     except RequestException as e:
-        log_error('Error during requests to {0} : {1}'.format(url, str(e)))
+        err = RuntimeError('Error during requests to {0} : {1}'.format(url, str(e)))
+        save_error(err)
         return None
 
 def is_good_response(resp):
-    """
-    Returns True if the response seems to be HTML, False otherwise.
-    """
     content_type = resp.headers['Content-Type'].lower()
     return (resp.status_code == 200 
             and content_type is not None 
             and content_type.find('html') > -1)
-
-def log_error(e):
-    """
-    It is always a good idea to log errors. 
-    This function just prints them, but you can
-    make it do anything.
-    """
-    print(e)
-    
-def print_brands(brands=[]):
-    brand: Brand
-    for brand in brands:
-        print(f"href: {brand.href}\nname: {brand.name}\nrepiled complaint: {brand.replied_complaint}\ntotal complaint: {brand.total_complaint}\naverage reply sec: {brand.average_reply_sec}\nrating: {brand.rating}\nrating count: {brand.rating_count}\n")
-
-def print_complained_item(item: ComplainedItem):
-    print(f"id: {item.id}\nhref: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item id: {item.upper_item_id}\nbrand id: {item.brand_id}\nis leafe: {item.is_leaf}\n")
-
-def print_complained_items(complained_items=[]):
-    item: ComplainedItem
-    for item in complained_items:
-        print(f"id: {item.id}\nhref: {item.href}\nname: {item.name}\nrating: {item.rating}\nrating count: {item.rating_count}\nupper item id: {item.upper_item_id}\nbrand id: {item.brand_id}\nis leafe: {item.is_leaf}\n")
-
+   
 def print_complaints(complaints=[]):
     complaint: Reply
     for complaint in complaints:
@@ -86,47 +49,6 @@ def print_complaints(complaints=[]):
         for reply in complaint.replies:
             print(f"href: {reply.href}\nmessage: {reply.message}\ndate: {reply.date}\nis from brand: {reply.is_from_brand}")
         print()
-
-def scrape_complained_items(complained_items=[]):
-    next_generation_compained_items = []
-    complained_item: ComplainedItem
-    for complained_item in complained_items:
-        url = BASE_URL + complained_item.href
-        raw_html = simple_get(url)
-        soup = BeautifulSoup(raw_html, 'html.parser')
-        complaint_div = soup.find("div", attrs={"class":"brand-detail-grid__main"})
-        children_section = complaint_div.find("section", recursive=False)
-        if children_section:
-            swiper_wrapper_div = children_section.find('div', class_='swiper-wrapper')
-            if swiper_wrapper_div:
-                # cocukları var
-                complained_item.is_leaf = False
-                print_complained_item(complained_item) # @+ sonra sil
-                complained_item = ComplainedItemDao.add_or_update(complained_item)
-                links = swiper_wrapper_div.find_all("a", recursive=False)
-                for link in links:
-                    url = BASE_URL + (link["href"])
-                    raw_html = simple_get(url)
-                    next_item_soup = BeautifulSoup(raw_html, 'html.parser')
-                    item_info_div = next_item_soup.find('div', class_='brand-rate')
-                    name = item_info_div.find("h1", class_="model-name ga-v ga-c").contents[-1].strip()
-                    ratings_div = item_info_div.find("div", class_="rating-wrap")
-                    rating = 0
-                    rating_count = 0
-                    if ratings_div:
-                        rating_nums = ratings_div.find("div", class_="rate-num").find("span").text.strip()
-                        rating = int(rating_nums)
-                        rating_count_str = ratings_div.find("span",class_="without-brackets").text.strip()
-                        rating_count_str = rating_count_str.replace(".", "")
-                        rating_count_str = rating_count_str.split()[0]
-                        rating_count = int(rating_count_str)            
-                    next_item = ComplainedItem(link["href"], name, rating, rating_count, complained_item.id, complained_item.brand_id)
-                    next_generation_compained_items.append(next_item)
-            else:
-                ComplainedItemDao.add_or_update(complained_item)
-        else:
-            ComplainedItemDao.add_or_update(complained_item)
-    return next_generation_compained_items
 
 def string_to_date(date_string):
     # Şuanki yıl bilgisini alın
@@ -294,5 +216,5 @@ locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
 # sayfalar gezilip şikayetler, üye ve cevaplarla birlikle oluşturulup
 # veri tabanına kaydediliyor
 items = ComplainedItemDao.get_all()
-complaints = scrape_complaints(items)
+scrape_complaints(items)
 

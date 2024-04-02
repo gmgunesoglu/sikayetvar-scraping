@@ -185,6 +185,7 @@ class ComplainedItemDao:
             leaf_items = session.query(ComplainedItem).filter(ComplainedItem.is_leaf == True).all()
             if leaf_items:
                 return leaf_items
+            return []
         except Exception as e:
             save_error(e)
     
@@ -194,6 +195,7 @@ class ComplainedItemDao:
             items = session.query(ComplainedItem).all()
             if items:
                 return items
+            return []
         except Exception as e:
             save_error(e)
 

@@ -119,7 +119,7 @@ class ErrorLog(Base):
     __tablename__ = 'error_log'
 
     id = Column(Integer, primary_key=True)
-    message = Column(Text, nullable=False)
+    message = Column(String(255), nullable=False)
     date = Column(DateTime, nullable=False)
 
     def __init__(self, message: str):
