@@ -4,8 +4,7 @@ import re
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
-from complained_item import ComplainedItem
-from brand import Brand
+from entity import Brand, ComplainedItem, Complaint, Reply, Member
 
 # GLOBAL VERIABLES
 

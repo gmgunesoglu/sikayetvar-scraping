@@ -13,11 +13,7 @@ from datetime import datetime, timedelta
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
-from complaint import Complaint
-from reply import Reply
-from complained_item import ComplainedItem
-from brand import Brand
-from commit import Commit
+from entity import Brand, ComplainedItem, Complaint, Reply, Member
 from dao import MemberDao, ReplyDao, ComplaintDao, ComplainedItemDao, BrandDao
 
 # GLOBAL VERIABLES

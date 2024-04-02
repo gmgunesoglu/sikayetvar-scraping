@@ -1,10 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from brand import Brand
-from complained_item import ComplainedItem
-from complaint import Complaint
-from reply import Reply
-from member import Member
+from entity import Brand, ComplainedItem, Complaint, Reply, Member
 
 class BrandDao:
 
@@ -365,3 +361,9 @@ session = Session()
 # brand = BrandDao.add(brand)
 # brand = BrandDao.get_by_href("/migros")
 # print(brand.id)
+
+# complained_item = ComplainedItem("/vodafone", "Vodafone", 53, 43262, None, 1)
+# complained_item.is_leaf = True
+# complained_item = ComplainedItemDao.add_or_update(complained_item)
+# complained_item = ComplainedItemDao.get_by_href("/vodafone")
+# print(complained_item.id)
