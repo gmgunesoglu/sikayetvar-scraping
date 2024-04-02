@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
-from entity import Brand, ComplainedItem, Complaint, Reply, Member, ErrorLog
-from dao import MemberDao, ReplyDao, ComplaintDao, ComplainedItemDao, ErrorLogDao
+from entity import Brand, ComplainedItem, Reply, ErrorLog
+from dao import ComplainedItemDao, BrandDao, ErrorLogDao
 
 # GLOBAL VERIABLES
 
@@ -64,6 +64,55 @@ def log_error(e):
     """
     print(e)
     
+def get_initial_complained_items():
+    url = "https://www.sikayetvar.com/tum-markalar"
+    raw_htlm = simple_get(url)
+    soup = BeautifulSoup(raw_htlm, 'html.parser')
+    last_page = soup.find("ul", class_="pagination ga-v ga-c").find_all("a")[-2].text
+    last_page_number = int(last_page)
+    brand_list = []
+    for i in range(1, 2): #@ last_page_number + 1
+        url_with_pagination = url + "?page=" + str(i)
+        raw_html = simple_get(url_with_pagination)
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        brand_divs = soup.find_all("div", attrs={"class":"brand-rate"})
+        for brand_div in brand_divs:
+            brand_name = brand_div.find("span", class_="brand-name").text
+            brand_link = brand_div.find("a")["href"]
+            rating = brand_div.find("div", class_="rate-num").span.text
+            rating_count = brand_div.find("span", class_="without-brackets").text
+            rating_count = rating_count.split(" ",1)[0]
+            rating_count = rating_count.replace(".","")
+            complained_item = ComplainedItem(brand_link, brand_name, int(rating), int(rating_count), None, None)
+            brand_list.append(complained_item)  
+    return brand_list
+
+def scrape_brands(initial_complained_items = []):
+    base_url = "https://www.sikayetvar.com"
+    brand_list = []
+    for complained_item in initial_complained_items:
+        report_url = base_url + complained_item.href + complained_item.href + "-marka-karnesi"
+        raw_html = simple_get(report_url)
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        brand_report = soup.find_all("div", attrs={"class":"data-count"})
+        complaint_count = brand_report[1].find("p").get_text().strip().replace(".","")
+        reply_count = 0
+        reply_sec = 0
+        reply_text = brand_report[0].find("p").get_text().strip()
+        if reply_text != "-":
+            reply_count = int(reply_text.replace(".",""))
+        reply_time_text = brand_report[3].find("p").get_text()
+        if reply_time_text != "-":
+            match = re.match(r'(?:(\d+)\s*sa)?\s*(?:(\d+)\s*dk)?\s*(?:(\d+)\s*sn)?', reply_time_text)
+            hours = int(match.group(1) or 0)
+            minutes = int(match.group(2) or 0)
+            seconds = int(match.group(3) or 0)
+            reply_sec = hours*3600 + minutes*60 + seconds
+        brand = Brand(complained_item.href, complained_item.name, reply_count, complaint_count, reply_sec, complained_item.rating_count, complained_item.rating)
+        brand = BrandDao.add_or_update(brand)
+        brand_list.append(brand)
+    return brand_list
+
 def print_brands(brands=[]):
     brand: Brand
     for brand in brands:
@@ -180,119 +229,35 @@ def convert_to_datetime(time_str):
             print("Geçersiz tarih formatı:", time_str)
             return None
 
-def scrape_complaints(complained_items=[]):
-    complaints = []
-    complained_item: Reply
-    for complained_item in complained_items:
-        url = BASE_URL + complained_item.href
-        raw_html = simple_get(url)
-        soup = BeautifulSoup(raw_html, 'html.parser')
-        complaint_pages = []
-        last_page_number = 1
-        last_page = soup.find("ul", class_="pagination-list")
-        if last_page:
-            last_page = last_page.find_all("a", class_="page")[-1].text.strip()
-            last_page_number = int(last_page)
-        print(f"there are {last_page_number} pages about {complained_item.brand}")
-        print()
-        total_complaints = 0
-        for i in range (1, 2): #@ last_page_number+1
-            url_with_pagination = url + "?page=" + str(i)
-            raw_html = simple_get(url_with_pagination)
-            soup = BeautifulSoup(raw_html, 'html.parser')
-            main_content = soup.find("main", attrs={"class":"content"})
-            complaints_layer = main_content.find_all("a", attrs={"class":"complaint-layer"})
-            total_complaints += len(complaints_layer)
-            for complaint in complaints_layer:
-                complaint_pages.append(complaint["href"])
-
-   
-        print(f"found {total_complaints} complaints about {complained_item.brand}")
-        
-        complaint_number = 0
-        for complaint_page in complaint_pages:
-            complaint_number += 1
-            complaint_url = BASE_URL + complaint_page
-            print(f"\nComplaint {complaint_number}:")
-            raw_html = simple_get(complaint_url)
-            soup = BeautifulSoup(raw_html, 'html.parser') 
-        
-            # title = soup.find("h1",{"class":"complaint-detail-title"}).text.strip()
-            title = soup.find("title").text.strip()
-            print(f"TITLE: {title}")
-            description = soup.find("div", {"class":"complaint-detail-description"})
-            if description is None:
-                description = "No description for: " + complaint_url
-            else:
-                description = description.text.strip('\n')
-            print(f"DESCRIPTION: {description}")
-            date_str = soup.find("div", {"class": "js-tooltip time"})["title"].strip()
-            print(f"DATE: {date_str}")
-            view_count = soup.find("span",{"class":"js-view-count"}).text
-            views = "0"
-            if view_count != "-":
-                views = view_count.replace(".","")
-            print(f"VIEWS: {views}")
-            complainer_url = soup.find("div", {"class": "profile-img"})["data-href"]
-            member_href = complainer_url[4:]
-            print(f"COMPLAINER: {member_href}")
-            rating_div = soup.find("div", {"data-ga-element": "Result_Stars"})
-            rating = None
-            if rating_div:
-                rating = int(rating_div.find("span", {"class": "rate-num"}).text.strip())
-            date = string_to_date(date_str)
-            complaint_detail_head_div = soup.find("div", {"class": "complaint-detail-head"})
-            solved = False
-            if complaint_detail_head_div:
-                if complaint_detail_head_div.find("div", {"class": "solved-badge"}):
-                    solved = True
-            like_count = 0
-            like_count_span = soup.find("span", {"class": "total-support"})
-            if like_count_span:
-                like_count_str = like_count_span.text.strip().replace(".","")
-                like_count_str = like_count_str.split()[0]
-                like_count = int(like_count_str)
-            print("like count:", like_count)
-
-            member = Member(member_href)
-            member = MemberDao.add_or_update(member)
-            complaint = Complaint(complaint_page, complained_item.id, title, description, date, int(views), like_count, member.id, rating, solved)
-            print(f"solved: {solved}")
-            print(f"solved: {complaint.solved}")
-
-            complaint = ComplaintDao.add_or_update(complaint)
-
-            answers_container = soup.find("div", {"class": "complaint-answer-container"})
-            if answers_container:
-                answer_divs = answers_container.find_all("div", recursive=False)
-                print("Cevaplaar....")
-                for answer_div in answer_divs:
-                    is_from_brand = False 
-                    tags = answer_div.get("class")
-                    if "ga-c" in tags and "ga-v" in tags:
-                        is_from_brand = True 
-                    reply_date_str = answer_div.find("div", class_="post-time").text.strip()
-                    message = answer_div.find("p", class_="message").text.strip().replace("\n","")
-                    reply_date = convert_to_datetime(reply_date_str)
-                    print("Mesaj:", message)
-                    print("Gönderim Tarihi:", reply_date)
-                    print("Gönderen marka mı:", is_from_brand)
-                    reply = Reply(complaint.id, message, date, is_from_brand)
-                    reply = ReplyDao.add(reply)
-                    complaint.replies.append(reply)
-
-            complaints.append(complaint)
-    return complaints
-
 
 # MAIN PROCESS
 
 # required for convert string to datetime
 locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
 
-# 5- tüm complained_items lar dan
-# sayfalar gezilip şikayetler, üye ve cevaplarla birlikle oluşturulup
+# 1- tüm markalara gidip initial_complained_items oluşturuluyor
+initial_complained_items = get_initial_complained_items()    
+
+# 2- initial_complained_items daki markaların karnelerine gidip 
+# brandler oluşturulup veri tabanına kaydediliyor
+scrape_brands(initial_complained_items)
+
+# 3- initial_complained_items daki brand_id ler dolduruluyor
+for item in initial_complained_items:
+    item.brand_id = BrandDao.get_by_href(item.href).id
+    item.upper_item_id = None
+
+# 4- tüm alt dalları ile birlikte complained_items oluşturulup 
 # veri tabanına kaydediliyor
-items = ComplainedItemDao.get_all()
-complaints = scrape_complaints(items)
+father_items = initial_complained_items
+generation = 0
+while True: 
+    child_items = scrape_complained_items(father_items)
+    print(f"--- {generation}. Generation Items ---")
+    generation +=1
+    print_complained_items(father_items)
+    if len(child_items) == 0:
+        break
+    father_items = child_items
+
 

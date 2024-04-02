@@ -40,6 +40,7 @@ CREATE TABLE  complaint (
     href VARCHAR(255) NOT NULL,
     complained_item_id BIGINT NOT NULL,
     title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
     date TIMESTAMP NOT NULL,
     view_count INT NOT NULL,
     like_count INT NOT NULL,

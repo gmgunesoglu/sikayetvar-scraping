@@ -292,55 +292,71 @@
 # print("hmm")
 
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from brand import Brand
+# from sqlalchemy import create_engine
+# from sqlalchemy.orm import sessionmaker
+# from brand import Brand
 
-def create_brand(href, name, replied_complaint, total_complaint, average_reply_sec, rating_count, rating):
-    new_brand = Brand(href=href, name=name, replied_complaint=replied_complaint, total_complaint=total_complaint,
-                      average_reply_sec=average_reply_sec, rating_count=rating_count, rating=rating)
-    session.add(new_brand)
-    session.commit()
+# def create_brand(href, name, replied_complaint, total_complaint, average_reply_sec, rating_count, rating):
+#     new_brand = Brand(href=href, name=name, replied_complaint=replied_complaint, total_complaint=total_complaint,
+#                       average_reply_sec=average_reply_sec, rating_count=rating_count, rating=rating)
+#     session.add(new_brand)
+#     session.commit()
 
-def get_brand_by_id(brand_id):
-    """
-    Belirli bir markanın bilgilerini brand_id'ye göre getirir.
-    """
-    return session.query(Brand).filter_by(id=brand_id).first()
+# def get_brand_by_id(brand_id):
+#     """
+#     Belirli bir markanın bilgilerini brand_id'ye göre getirir.
+#     """
+#     return session.query(Brand).filter_by(id=brand_id).first()
 
-def update_brand(brand_id, href=None, name=None, replied_complaint=None, total_complaint=None,
-                 average_reply_sec=None, rating_count=None, rating=None):
-    """
-    Belirli bir markanın bilgilerini günceller.
-    """
-    brand = session.query(Brand).filter_by(id=brand_id).first()
-    if href:
-        brand.href = href
-    if name:
-        brand.name = name
-    if replied_complaint:
-        brand.replied_complaint = replied_complaint
-    if total_complaint:
-        brand.total_complaint = total_complaintsqlalchemy.orm
-    if average_reply_sec:
-        brand.average_reply_sec = average_reply_sec
-    if rating_count:
-        brand.rating_count = rating_count
-    if rating:
-        brand.rating = rating
-    session.commit()
+# def update_brand(brand_id, href=None, name=None, replied_complaint=None, total_complaint=None,
+#                  average_reply_sec=None, rating_count=None, rating=None):
+#     """
+#     Belirli bir markanın bilgilerini günceller.
+#     """
+#     brand = session.query(Brand).filter_by(id=brand_id).first()
+#     if href:
+#         brand.href = href
+#     if name:
+#         brand.name = name
+#     if replied_complaint:
+#         brand.replied_complaint = replied_complaint
+#     if total_complaint:
+#         brand.total_complaint = total_complaintsqlalchemy.orm
+#     if average_reply_sec:
+#         brand.average_reply_sec = average_reply_sec
+#     if rating_count:
+#         brand.rating_count = rating_count
+#     if rating:
+#         brand.rating = rating
+#     session.commit()
 
-def delete_brand(brand_id):
-    """
-    Belirli bir markayı veritabanından siler.
-    """
-    brand = session.query(Brand).filter_by(id=brand_id).first()
-    session.delete(brand)
-    session.commit()
+# def delete_brand(brand_id):
+#     """
+#     Belirli bir markayı veritabanından siler.
+#     """
+#     brand = session.query(Brand).filter_by(id=brand_id).first()
+#     session.delete(brand)
+#     session.commit()
 
-# Veritabanı bağlantısını oluştur
-engine = create_engine('postgresql://postgres:postgres@localhost:5432/sikayetvar')
-Session = sessionmaker(bind=engine)
-session = Session()
+# # Veritabanı bağlantısını oluştur
+# engine = create_engine('postgresql://postgres:postgres@localhost:5432/sikayetvar')
+# Session = sessionmaker(bind=engine)
+# session = Session()
 
-create_brand("/migros", "Migros", 5000, 5200, 300, 600, 60)
+# create_brand("/migros", "Migros", 5000, 5200, 300, 600, 60)
+
+class MyCustomException(Exception):
+    pass
+
+def function(num1, num2):
+    try:
+        return num1 / num2
+    except Exception as e:
+        raise RuntimeError("Bu bir runtime hatasıdır.")
+
+try:
+    num = function(10,0)
+    print(num)
+except Exception as e:
+    print(str(e))
+print("hellow world")

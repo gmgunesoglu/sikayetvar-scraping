@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -73,6 +73,7 @@ class Complaint(Base):
     href = Column(String(255), nullable=False, unique=True)
     complained_item_id = Column(Integer, ForeignKey('complained_item.id'), nullable=False)
     title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
     date = Column(DateTime, nullable=False)
     view_count = Column(Integer, nullable=False)
     like_count = Column(Integer, nullable=False)   
@@ -84,23 +85,24 @@ class Complaint(Base):
     member = relationship("Member", back_populates="complaints")
     replies = relationship("Reply", back_populates="complaint")
 
-    def __init__(self, href: str, complained_item_id: int, title: str, date: datetime, view_count: int, like_count: int, member_id: int, rating: int, solved: bool):
+    def __init__(self, href: str, complained_item_id: int, title: str, description: str, date: datetime, view_count: int, like_count: int, member_id: int, rating: int, solved: bool):
         self.href = href
         self.complained_item_id = complained_item_id
         self.title = title
+        self.description = description
         self.date = date
         self.view_count = view_count
         self.like_count = like_count
         self.member_id = member_id
         self.rating = rating
-        self.sovled = solved
+        self.solved = solved
 
 class Reply(Base):
     __tablename__ = 'reply'
 
     id = Column(Integer, primary_key=True)
     complaint_id = Column(Integer, ForeignKey('complaint.id'), nullable=False)   
-    message = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
     date = Column(DateTime, nullable=False)
     is_from_brand = Column(Boolean, nullable=False)
 
@@ -112,3 +114,14 @@ class Reply(Base):
         self.message = message
         self.date = date
         self.is_from_brand = is_from_brand
+
+class ErrorLog(Base):
+    __tablename__ = 'error_log'
+
+    id = Column(Integer, primary_key=True)
+    message = Column(Text, nullable=False)
+    date = Column(DateTime, nullable=False)
+
+    def __init__(self, message: str):
+        self.message = message
+        self.date = datetime.now()
