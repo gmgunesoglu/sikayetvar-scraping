@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
 from entity import Brand, ComplainedItem
-from dao import ComplainedItemDao, BrandDao, save_error
+from dao import ComplainedItemDao, BrandDao, ErrorLogDao
 
 # GLOBAL VERIABLES
 
@@ -16,7 +16,7 @@ HEADERS = {
 
 BASE_URL = "http://www.sikayetvar.com"
 
-DELAY = 10
+DELAY = 5
 
 # FUNCTIONS
 
@@ -29,12 +29,13 @@ def second_get(url: str, delay: int, count: int):
                 return resp.content
             else:
                 print(f"None url: {url}")   
-                save_error(RuntimeError("Bad response for GET: " + url))
+                ErrorLogDao.save_error(RuntimeError("Bad response for GET: " + url))
                 if count == 1:
                     return None
                 return second_get(url, delay*1.5, count-1)
     except RequestException as e:
-        save_error(RuntimeError('Error during requests to {0} : {1}'.format(url, str(e))))
+        err = RuntimeError('Error during requests to {0} : {1}'.format(url, str(e)))
+        ErrorLogDao.save_error(err) 
         return None
 
 def simple_get(url: str):
@@ -46,10 +47,11 @@ def simple_get(url: str):
                 return resp.content
             else:
                 print(f"None url: {url}")   
-                save_error(RuntimeError("Bad response for GET: " + url))
+                ErrorLogDao.save_error(RuntimeError("Bad response for GET: " + url))
                 return second_get(url, DELAY*1.5, 2)
     except RequestException as e:
-        save_error(err = RuntimeError('Error during requests to {0} : {1}'.format(url, str(e))))
+        err = RuntimeError('Error during requests to {0} : {1}'.format(url, str(e)))
+        ErrorLogDao.save_error(err)
         return None
 
 def is_good_response(resp):
@@ -220,6 +222,3 @@ while True:
             if len(child_items) == 0:
                 break
             father_items = child_items
-    # bir tur tamamlandıktan sonra delay 1 saniyeden 10 saniyeye cıkartılıyor
-    # verileri guncel tutmak icin surekli calisiyor ama daha yavas
-    DELAY = 10

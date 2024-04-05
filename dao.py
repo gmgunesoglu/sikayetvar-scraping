@@ -11,7 +11,7 @@ class BrandDao:
             session.commit()
             return brand
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_id(id: int):
@@ -20,7 +20,7 @@ class BrandDao:
             if brand:
                 return brand
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_href(href: str):
@@ -29,7 +29,7 @@ class BrandDao:
             if brand:
                 return brand
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def __update(old_brand: Brand, brand: Brand):
@@ -53,7 +53,7 @@ class BrandDao:
             session.commit()
             return old_brand
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def update_by_id(id: int, brand: Brand):
@@ -72,7 +72,7 @@ class BrandDao:
             session.commit()
             return brand
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def delete_by_id(id: int):
@@ -100,7 +100,7 @@ class ComplainedItemDao:
             session.commit()
             return complained_item
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
             
 
     @staticmethod
@@ -110,7 +110,7 @@ class ComplainedItemDao:
             if complained_item:
                 return complained_item
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def get_all_in_id_range(start_id: int, end_id: int):
@@ -118,7 +118,7 @@ class ComplainedItemDao:
             complained_items = session.query(ComplainedItem).filter(ComplainedItem.id >= start_id, ComplainedItem.id < end_id).all()
             return complained_items
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_count():
@@ -126,7 +126,7 @@ class ComplainedItemDao:
             count = session.query(func.count(ComplainedItem.id)).scalar()
             return count
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_href(href: str):
@@ -135,7 +135,7 @@ class ComplainedItemDao:
             if complained_item:
                 return complained_item
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def __update(old_complained_item: ComplainedItem, complained_item: ComplainedItem):
@@ -157,7 +157,7 @@ class ComplainedItemDao:
             session.commit()
             return old_complained_item
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def update_by_id(id: int, complained_item: Complaint):
@@ -176,7 +176,7 @@ class ComplainedItemDao:
             session.commit()
             return complained_item
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def delete_by_id(id: int):
@@ -203,7 +203,7 @@ class ComplainedItemDao:
                 return leaf_items
             return []
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def get_all():
@@ -213,7 +213,7 @@ class ComplainedItemDao:
                 return items
             return []
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
 class ComplaintDao:
 
@@ -224,7 +224,7 @@ class ComplaintDao:
             session.commit()
             return complaint
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_id(id: int):
@@ -233,7 +233,7 @@ class ComplaintDao:
             if complaint:
                 return complaint
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_href(href: str):
@@ -242,7 +242,7 @@ class ComplaintDao:
             if complaint:
                 return complaint
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def __update(old_complaint: Complaint, complaint: Complaint):
@@ -270,7 +270,7 @@ class ComplaintDao:
             session.commit()
             return old_complaint
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def update_by_id(id: int, complaint: Complaint):
@@ -289,7 +289,7 @@ class ComplaintDao:
             session.commit()
             return complaint
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def delete_by_id(id: int):
@@ -317,7 +317,7 @@ class ReplyDao:
             session.commit()
             return reply
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_id(id: int):
@@ -326,7 +326,7 @@ class ReplyDao:
             if reply:
                 return reply
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_href(href: str):
@@ -335,7 +335,7 @@ class ReplyDao:
             if reply:
                 return reply
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def __update(old_reply: Reply, reply: Reply):
@@ -353,7 +353,7 @@ class ReplyDao:
             session.commit()
             return old_reply
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def update_by_id(id: int, reply: Reply):
@@ -372,7 +372,7 @@ class ReplyDao:
             session.commit()
             return reply
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def delete_by_id(id: int):
@@ -400,7 +400,7 @@ class MemberDao:
             session.commit()
             return member
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_id(id: int):
@@ -409,7 +409,7 @@ class MemberDao:
             if member:
                 return member
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def get_by_href(href: str):
@@ -418,7 +418,7 @@ class MemberDao:
             if member:
                 return member
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
     
     @staticmethod
     def __update(old_member: Member, member: Member):
@@ -430,7 +430,7 @@ class MemberDao:
             session.commit()
             return old_member
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def update_by_id(id: int, member: Member):
@@ -449,7 +449,7 @@ class MemberDao:
             session.commit()
             return member
         except Exception as e:
-            save_error(e)
+            ErrorLogDao.save_error(e)
 
     @staticmethod
     def delete_by_id(id: int):
@@ -475,12 +475,13 @@ class ErrorLogDao:
         session.add(error_log)
         session.commit()
         return error_log
-
-def save_error(exception: Exception):
-    error_message = str(exception)
-    error_log = ErrorLog(error_message)
-    ErrorLogDao.add(error_log)
-    print(f"[-] Error message: {error_message}")
+    
+    @staticmethod
+    def save_error(exception: Exception):
+        error_message = str(exception)
+        error_log = ErrorLog(error_message)
+        ErrorLogDao.add(error_log)
+        print(f"[-] Error message: {error_message}")
 
 
 # Veritabanı bağlantısını oluştur
